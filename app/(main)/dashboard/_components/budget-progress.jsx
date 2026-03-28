@@ -17,6 +17,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { updateBudget } from "@/actions/budget";
 
+function getPredictedBurnoutDate(currentExpenses, budgetAmount) {
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  if (dayOfMonth === 0 || currentExpenses === 0) return null;
+
+  const dailyRate = currentExpenses / dayOfMonth;
+  const remaining = budgetAmount - currentExpenses;
+  if (remaining <= 0) return null;
+
+  const daysLeft = Math.floor(remaining / dailyRate);
+  const burnoutDate = new Date(now);
+  burnoutDate.setDate(now.getDate() + daysLeft);
+  return burnoutDate;
+}
+
 export function BudgetProgress({ initialBudget, currentExpenses }) {
   const [isEditing, setIsEditing] = useState(false);
   const [newBudget, setNewBudget] = useState(
@@ -124,20 +139,24 @@ export function BudgetProgress({ initialBudget, currentExpenses }) {
       <CardContent>
         {initialBudget && (
           <div className="space-y-2">
-            <Progress
-              value={percentUsed}
-              extraStyles={`₹{
-                // add to Progress component
-                percentUsed >= 90
-                  ? "bg-red-500"
-                  : percentUsed >= 75
-                    ? "bg-yellow-500"
-                    : "bg-green-500"
-              }`}
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {percentUsed.toFixed(1)}% used
-            </p>
+            <Progress value={percentUsed} />
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-muted-foreground">
+                {percentUsed.toFixed(1)}% used
+              </p>
+              {(() => {
+                const burnout = getPredictedBurnoutDate(currentExpenses, initialBudget.amount);
+                if (!burnout) return null;
+                const isThisMonth = burnout.getMonth() === new Date().getMonth();
+                return (
+                  <p className={`text-xs font-medium ${isThisMonth ? "text-red-500" : "text-green-600"}`}>
+                    {isThisMonth
+                      ? `⚠️ Budget runs out ~${burnout.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                      : `On track — won't exceed this month`}
+                  </p>
+                );
+              })()}
+            </div>
           </div>
         )}
       </CardContent>

@@ -5,12 +5,16 @@ import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { checkUser } from "@/lib/checkUser";
 import Image from "next/image";
+import { getUserAccounts } from "@/actions/dashboard";
+import { AccountsNav } from "./accounts-nav";
+import { ThemeToggle } from "./theme-toggle";
 
 const Header = async () => {
   await checkUser();
+  const accounts = await getUserAccounts().catch(() => []);
 
   return (
-    <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
+    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b">
       <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/">
           <Image
@@ -37,6 +41,7 @@ const Header = async () => {
                 <span className="hidden md:inline">Dashboard</span>
               </Button>
             </Link>
+            <AccountsNav accounts={accounts} />
             <a href="/transaction/create">
               <Button className="flex items-center gap-2">
                 <PenBox size={18} />
@@ -52,12 +57,11 @@ const Header = async () => {
           <SignedIn>
             <UserButton
               appearance={{
-                elements: {
-                  avatarBox: "w-10 h-10",
-                },
+                elements: { avatarBox: "w-10 h-10" },
               }}
             />
           </SignedIn>
+          <ThemeToggle />
         </div>
       </nav>
     </header>

@@ -72,7 +72,6 @@ export function TransactionTable({ transactions }) {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [recurringFilter, setRecurringFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
@@ -91,14 +90,6 @@ export function TransactionTable({ transactions }) {
     // Apply type filter
     if (typeFilter) {
       result = result.filter((transaction) => transaction.type === typeFilter);
-    }
-
-    // Apply recurring filter
-    if (recurringFilter) {
-      result = result.filter((transaction) => {
-        if (recurringFilter === "recurring") return transaction.isRecurring;
-        return !transaction.isRecurring;
-      });
     }
 
     // Apply sorting
@@ -123,7 +114,7 @@ export function TransactionTable({ transactions }) {
     });
 
     return result;
-  }, [transactions, searchTerm, typeFilter, recurringFilter, sortConfig]);
+  }, [transactions, searchTerm, typeFilter, sortConfig]);
 
   // Pagination calculations
   const totalPages = Math.ceil(
@@ -187,7 +178,6 @@ export function TransactionTable({ transactions }) {
   const handleClearFilters = () => {
     setSearchTerm("");
     setTypeFilter("");
-    setRecurringFilter("");
     setCurrentPage(1);
   };
 
@@ -232,22 +222,6 @@ export function TransactionTable({ transactions }) {
             </SelectContent>
           </Select>
 
-          <Select
-            value={recurringFilter}
-            onValueChange={(value) => {
-              setRecurringFilter(value);
-              setCurrentPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[130px]">
-              <SelectValue placeholder="All Transactions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recurring">Recurring Only</SelectItem>
-              <SelectItem value="non-recurring">Non-recurring Only</SelectItem>
-            </SelectContent>
-          </Select>
-
           {/* Bulk Actions */}
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-2">
@@ -262,7 +236,7 @@ export function TransactionTable({ transactions }) {
             </div>
           )}
 
-          {(searchTerm || typeFilter || recurringFilter) && (
+          {(searchTerm || typeFilter) && (
             <Button
               variant="outline"
               size="icon"

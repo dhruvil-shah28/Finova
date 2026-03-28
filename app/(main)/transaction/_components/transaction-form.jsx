@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -27,9 +27,10 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { CreateAccountDrawer } from "@/components/create-account-drawer";
 import { cn } from "@/lib/utils";
-import { createTransaction, updateTransaction } from "@/actions/transaction";
+import { createTransaction, updateTransaction, suggestCategory } from "@/actions/transaction";
 import { transactionSchema } from "@/app/lib/schema";
 import { ReceiptScanner } from "./recipt-scanner";
+import { BackfillDialog } from "./backfill-dialog";
 
 export function AddTransactionForm({
   accounts,
@@ -81,6 +82,25 @@ export function AddTransactionForm({
     data: transactionResult,
   } = useFetch(editMode ? updateTransaction : createTransaction);
 
+  const [isCategorizing, setIsCategorizing] = useState(false);
+  const [backfillOpen, setBackfillOpen] = useState(false);
+  const [createdTransaction, setCreatedTransaction] = useState(null);
+
+  const handleDescriptionBlur = async (e) => {
+    const description = e.target.value.trim();
+    if (!description) return;
+    setIsCategorizing(true);
+    try {
+      const suggested = await suggestCategory(description, watch("type"));
+      if (suggested) {
+        setValue("category", suggested);
+        toast.success("Category auto-suggested");
+      }
+    } finally {
+      setIsCategorizing(false);
+    }
+  };
+
   const onSubmit = (data) => {
     const formData = {
       ...data,
@@ -110,13 +130,21 @@ export function AddTransactionForm({
 
   useEffect(() => {
     if (transactionResult?.success && !transactionLoading) {
-      toast.success(
-        editMode
-          ? "Transaction updated successfully"
-          : "Transaction created successfully"
-      );
-      reset();
-      router.push(`/account/${transactionResult.data.accountId}`);
+      const data = transactionResult.data;
+      const isPastRecurring =
+        !editMode &&
+        data.isRecurring &&
+        data.recurringInterval &&
+        new Date(data.date) < new Date(new Date().setHours(0, 0, 0, 0));
+
+      if (isPastRecurring) {
+        setCreatedTransaction(data);
+        setBackfillOpen(true);
+      } else {
+        toast.success(editMode ? "Transaction updated successfully" : "Transaction created successfully");
+        reset();
+        router.push(`/account/${data.accountId}`);
+      }
     }
   }, [transactionResult, transactionLoading, editMode]);
 
@@ -129,6 +157,7 @@ export function AddTransactionForm({
   );
 
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Receipt Scanner - Only show in create mode */}
       {!editMode && <ReceiptScanner onScanComplete={handleScanComplete} />}
@@ -199,12 +228,34 @@ export function AddTransactionForm({
         </div>
       </div>
 
+      {/* Description */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          Description
+          {isCategorizing && (
+            <span className="ml-2 text-xs text-muted-foreground">
+              <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
+              Suggesting category...
+            </span>
+          )}
+        </label>
+        <Input
+          placeholder="Enter description"
+          {...register("description")}
+          onBlur={handleDescriptionBlur}
+          onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+        />
+        {errors.description && (
+          <p className="text-sm text-red-500">{errors.description.message}</p>
+        )}
+      </div>
+
       {/* Category */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Category</label>
         <Select
           onValueChange={(value) => setValue("category", value)}
-          defaultValue={getValues("category")}
+          value={watch("category") || ""}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select category" />
@@ -252,15 +303,6 @@ export function AddTransactionForm({
         </Popover>
         {errors.date && (
           <p className="text-sm text-red-500">{errors.date.message}</p>
-        )}
-      </div>
-
-      {/* Description */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Description</label>
-        <Input placeholder="Enter description" {...register("description")} />
-        {errors.description && (
-          <p className="text-sm text-red-500">{errors.description.message}</p>
         )}
       </div>
 
@@ -328,5 +370,17 @@ export function AddTransactionForm({
         </Button>
       </div>
     </form>
+
+    <BackfillDialog
+      open={backfillOpen}
+      onOpenChange={setBackfillOpen}
+      transaction={createdTransaction}
+      onDone={() => {
+        toast.success("Transaction created successfully");
+        reset();
+        router.push(`/account/${createdTransaction?.accountId}`);
+      }}
+    />
+  </>
   );
 }

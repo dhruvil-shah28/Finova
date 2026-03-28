@@ -32,7 +32,7 @@ const HeroSection = () => {
         <h1 className="text-5xl md:text-8xl lg:text-[105px] pb-6 gradient-title">
           Master Your Money with AI-Driven Insights
         </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
           A smart money companion that monitors your expenses, uncovers patterns, and guides you toward smarter financial decisions.
         </p>
         <div className="flex justify-center space-x-4">
