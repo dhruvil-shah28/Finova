@@ -290,6 +290,113 @@ export async function scanReceipt(file) {
   }
 }
 
+// Suggest category from description
+export async function suggestCategory(description, type) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const categoryIds =
+      type === "INCOME"
+        ? ["salary", "freelance", "investments", "business", "rental", "other-income"]
+        : ["housing", "transportation", "groceries", "utilities", "entertainment", "food", "shopping", "healthcare", "education", "personal", "travel", "insurance", "gifts", "bills", "other-expense"];
+
+    const prompt = `Given this transaction description: "${description}"
+And transaction type: ${type}
+Pick the single most appropriate category ID from this list: ${categoryIds.join(", ")}
+Respond with ONLY the category ID, nothing else.`;
+
+    const result = await model.generateContent(prompt);
+    const category = result.response.text().trim().toLowerCase();
+
+    return categoryIds.includes(category) ? category : null;
+  } catch (error) {
+    console.error("Error suggesting category:", error);
+    return null;
+  }
+}
+
+// Backfill recurring transactions from a past start date
+export async function backfillTransactions(transactionId, excludedDates = []) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+    if (!user) throw new Error("User not found");
+
+    const transaction = await db.transaction.findUnique({
+      where: { id: transactionId, userId: user.id },
+      include: { account: true },
+    });
+    if (!transaction) throw new Error("Transaction not found");
+
+    const excludedSet = new Set(
+      excludedDates.map((d) => new Date(d).toDateString())
+    );
+
+    // Generate all dates from transaction date up to (not including) today
+    const dates = [];
+    const cursor = new Date(transaction.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    cursor.setHours(0, 0, 0, 0);
+    // skip the original transaction date itself
+    advanceDate(cursor, transaction.recurringInterval);
+
+    while (cursor < today) {
+      if (!excludedSet.has(cursor.toDateString())) {
+        dates.push(new Date(cursor));
+      }
+      advanceDate(cursor, transaction.recurringInterval);
+    }
+
+    if (dates.length === 0) return { success: true, count: 0 };
+
+    const balanceChange = dates.length * (
+      transaction.type === "EXPENSE"
+        ? -transaction.amount.toNumber()
+        : transaction.amount.toNumber()
+    );
+
+    await db.$transaction(async (tx) => {
+      await tx.transaction.createMany({
+        data: dates.map((date) => ({
+          type: transaction.type,
+          amount: transaction.amount,
+          description: `${transaction.description} (Recurring)`,
+          date,
+          category: transaction.category,
+          userId: user.id,
+          accountId: transaction.accountId,
+          isRecurring: false,
+          status: "COMPLETED",
+        })),
+      });
+
+      await tx.account.update({
+        where: { id: transaction.accountId },
+        data: { balance: { increment: balanceChange } },
+      });
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/account/${transaction.accountId}`);
+
+    return { success: true, count: dates.length };
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+function advanceDate(date, interval) {
+  switch (interval) {
+    case "DAILY":   date.setDate(date.getDate() + 1); break;
+    case "WEEKLY":  date.setDate(date.getDate() + 7); break;
+    case "MONTHLY": date.setMonth(date.getMonth() + 1); break;
+    case "YEARLY":  date.setFullYear(date.getFullYear() + 1); break;
+  }
+}
+
 // Helper function to calculate next recurring date
 function calculateNextRecurringDate(startDate, interval) {
   const date = new Date(startDate);

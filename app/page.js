@@ -13,12 +13,12 @@ import Link from "next/link";
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <HeroSection />
 
       {/* Stats Section */}
-      <section className="py-20 bg-blue-50">
+      <section className="py-20 bg-blue-950/20 dark:bg-blue-950/30">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {statsData.map((stat, index) => (
@@ -26,7 +26,7 @@ const LandingPage = () => {
                 <div className="text-4xl font-bold text-blue-600 mb-2">
                   {stat.value}
                 </div>
-                <div className="text-gray-600">{stat.label}</div>
+                <div className="text-muted-foreground">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -45,7 +45,7 @@ const LandingPage = () => {
                 <CardContent className="space-y-4 pt-4">
                   {feature.icon}
                   <h3 className="text-xl font-semibold">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-muted-foreground">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -54,17 +54,17 @@ const LandingPage = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-blue-50">
+      <section className="py-20 bg-blue-950/20 dark:bg-blue-950/30">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-16">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {howItWorksData.map((step, index) => (
               <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto mb-6">
                   {step.icon}
                 </div>
                 <h3 className="text-xl font-semibold mb-4">{step.title}</h3>
-                <p className="text-gray-600">{step.description}</p>
+                <p className="text-muted-foreground">{step.description}</p>
               </div>
             ))}
           </div>
@@ -91,12 +91,12 @@ const LandingPage = () => {
                     />
                     <div className="ml-4">
                       <div className="font-semibold">{testimonial.name}</div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-muted-foreground">
                         {testimonial.role}
                       </div>
                     </div>
                   </div>
-                  <p className="text-gray-600">{testimonial.quote}</p>
+                  <p className="text-muted-foreground">{testimonial.quote}</p>
                 </CardContent>
               </Card>
             ))}
