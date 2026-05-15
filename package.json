@@ -31,11 +31,19 @@
     "date-fns": "^4.1.0",
     "inngest": "^3.27.4",
     "lucide-react": "^0.462.0",
+<<<<<<< HEAD
     "next": "^15.2.3",
     "next-themes": "^0.4.3",
     "react": "^19.0.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "^19.0.0",
+=======
+    "next": "15.0.5",
+    "next-themes": "^0.4.3",
+    "react": "^19.0.0-rc-66855b96-20241106",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^19.0.0-rc-66855b96-20241106",
+>>>>>>> 03b30961da1db1d3aef10995c1c6a5b8abc91fcf
     "react-hook-form": "^7.53.2",
     "react-spinners": "^0.14.1",
     "recharts": "^2.14.1",
@@ -54,4 +62,8 @@
     "react-email": "3.0.3",
     "tailwindcss": "^3.4.1"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 03b30961da1db1d3aef10995c1c6a5b8abc91fcf
