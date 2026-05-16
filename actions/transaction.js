@@ -230,12 +230,17 @@ export async function getUserTransactions(query = {}) {
 // Scan Receipt
 export async function scanReceipt(file) {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is missing in environment variables");
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     // Convert ArrayBuffer to Base64
     const base64String = Buffer.from(arrayBuffer).toString("base64");
+    const mimeType = file.type || "image/jpeg";
 
     const prompt = `
       Analyze this receipt image and extract the following information in JSON format:
@@ -257,15 +262,34 @@ export async function scanReceipt(file) {
       If its not a recipt, return an empty object
     `;
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          data: base64String,
-          mimeType: file.type,
-        },
-      },
-      prompt,
-    ]);
+    let result;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        result = await model.generateContent([
+          {
+            inlineData: {
+              data: base64String,
+              mimeType: mimeType,
+            },
+          },
+          prompt,
+        ]);
+        break; // Success, exit loop
+      } catch (error) {
+        if (error.status === 429 && retries > 1) {
+          retries--;
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2s
+          continue;
+        }
+        console.error("Gemini API Error Details:", {
+          status: error.status,
+          message: error.message,
+          model: "gemini-1.5-flash"
+        });
+        throw error; 
+      }
+    }
 
     const response = await result.response;
     const text = response.text();
