@@ -5,6 +5,9 @@ import { db } from "@/lib/prisma";
 import { request } from "@arcjet/next";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const serializeTransaction = (obj) => {
   const serialized = { ...obj };
@@ -154,3 +157,61 @@ export async function getDashboardData() {
 
   return transactions.map(serializeTransaction);
 }
+
+export async function getAIInsights() {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const user = await db.user.findUnique({
+    where: { clerkUserId: userId },
+  });
+
+  if (!user) throw new Error("User not found");
+
+  const transactions = await db.transaction.findMany({
+    where: { userId: user.id },
+    orderBy: { date: "desc" },
+    take: 20, // Analyze last 20 transactions
+  });
+
+  if (transactions.length === 0) {
+    return {
+      personality: "The Newcomer 🆕",
+      tip: "Start by logging your first transaction to get AI insights!",
+    };
+  }
+
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const prompt = `
+    Analyze these financial transactions and provide:
+    1. A short, fun "Spending Personality" title (e.g., "The Coffee Addict ☕", "Budget Ninja 🥷").
+    2. One concise, actionable financial tip based on the data.
+
+    Transactions:
+    ${transactions
+      .map((t) => `${t.description}: $${t.amount} (${t.type})`)
+      .join("\n")}
+
+    Respond ONLY in this JSON format:
+    {
+      "personality": "string",
+      "tip": "string"
+    }
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    const cleanedText = text.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleanedText);
+  } catch (error) {
+    console.error("Error generating AI insights:", error);
+    return {
+      personality: "The Financier 💼",
+      tip: "Keep tracking your expenses to see detailed AI patterns.",
+    };
+  }
+}
+

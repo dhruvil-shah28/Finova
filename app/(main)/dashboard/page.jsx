@@ -8,6 +8,7 @@ import { BudgetProgress } from "./_components/budget-progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { DashboardOverview } from "./_components/transaction-overview";
+import DashboardInsights from "@/components/dashboard-insights";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,8 @@ export default async function DashboardPage() {
         initialBudget={budgetData?.budget}
         currentExpenses={budgetData?.currentExpenses || 0}
       />
+
+      <DashboardInsights />
 
       {/* Dashboard Overview */}
       <DashboardOverview
