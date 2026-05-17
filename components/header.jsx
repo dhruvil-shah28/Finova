@@ -1,17 +1,14 @@
 import React from "react";
 import { Button } from "./ui/button";
-import { PenBox, LayoutDashboard } from "lucide-react";
+import { PenBox } from "lucide-react";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { checkUser } from "@/lib/checkUser";
 import Image from "next/image";
-import { getUserAccounts } from "@/actions/dashboard";
-import { AccountsNav } from "./accounts-nav";
 import { ThemeToggle } from "./theme-toggle";
 
 const Header = async () => {
   await checkUser();
-  const accounts = await getUserAccounts().catch(() => []);
 
   return (
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-md z-50 border-b">
@@ -32,16 +29,6 @@ const Header = async () => {
         {/* Action Buttons */}
         <div className="flex items-center space-x-4">
           <SignedIn>
-            <Link
-              href="/dashboard"
-              className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
-            >
-              <Button variant="outline">
-                <LayoutDashboard size={18} />
-                <span className="hidden md:inline">Dashboard</span>
-              </Button>
-            </Link>
-            <AccountsNav accounts={accounts} />
             <a href="/transaction/create">
               <Button className="flex items-center gap-2">
                 <PenBox size={18} />

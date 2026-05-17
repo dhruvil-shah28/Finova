@@ -64,7 +64,7 @@ export default function DashboardInsights() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground italic">
-            "{insights.tip}"
+            &quot;{insights.tip}&quot;
           </p>
         </CardContent>
       </Card>
