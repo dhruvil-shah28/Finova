@@ -67,15 +67,5 @@ ARCJET_KEY=
 ```bash
 npm run dev
 ```
-
-## 👥 Team
-
-| Name | Role |
-|---|---|
-| Dhruvil Shah | Full Stack Development |
-| Saurav Kumar | Backend & Database |
-| Sanskriti Dhakar | Frontend & UI |
-| Chetana Randhaye | AI Integration & Testing |
-
 ---
 > Developed as part of Academic Project — Vishwakarma Institute of Technology, 2025-26
